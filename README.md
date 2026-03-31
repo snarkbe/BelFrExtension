@@ -1,16 +1,27 @@
-# BelFr
+# BelFr — Auto-switch Belgian websites from Dutch to French
 
-A browser extension (Chrome & Edge) that automatically redirects Belgian Dutch pages to their French equivalent.
+[![Chrome](https://img.shields.io/badge/Chrome-supported-brightgreen?logo=googlechrome)](https://developer.chrome.com/docs/extensions/)
+[![Edge](https://img.shields.io/badge/Edge-supported-brightgreen?logo=microsoftedge)](https://learn.microsoft.com/en-us/microsoft-edge/extensions-chromium/)
+[![Manifest V3](https://img.shields.io/badge/Manifest-V3-blue)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
 
-## What it does
+> **Automatically redirect Belgian Dutch (NL) web pages to their French (FR) equivalent.**
+> Perfect for French-speaking users browsing Belgian websites that default to Dutch.
 
-When you navigate to a page whose URL contains a Dutch-Belgian locale segment, BelFr builds the French alternative and **verifies it exists** before redirecting.
+## Features
 
-| Detected in URL | Replaced with |
-|-----------------|---------------|
-| `be-nl`         | `be-fr`       |
-| `nl-be`         | `fr-be`       |
-| `/nl/`          | `/fr/`        |
+- **Automatic language switching** — detects Dutch locale segments in URLs and switches to French
+- **Smart redirect** — verifies the French page exists before redirecting (no broken pages)
+- **Zero configuration** — install and forget, it just works
+- **Lightweight** — runs as a background service worker, no content scripts injected into pages
+- **Privacy-friendly** — no data collection, no tracking, no external services
+
+### Supported URL patterns
+
+| Detected in URL | Replaced with | Example |
+|-----------------|---------------|---------|
+| `be-nl`         | `be-fr`       | `example.com/be-nl/product` → `example.com/be-fr/product` |
+| `nl-be`         | `fr-be`       | `example.com/nl-be/page` → `example.com/fr-be/page` |
+| `/nl/`          | `/fr/`        | `example.com/nl/home` → `example.com/fr/home` |
 
 Matching is case-insensitive. A blue **FR** badge appears on the extension icon when a switch occurs.
 
@@ -23,9 +34,11 @@ Matching is case-insensitive. A blue **FR** badge appears on the extension icon 
 
 ## How it works
 
-- Runs as a Manifest V3 background service worker — no content scripts injected
-- Sends a HEAD request (falls back to GET) to verify the French URL exists before redirecting
-- 5-second timeout on existence checks to avoid hanging
+1. Monitors page navigation via a Manifest V3 background service worker
+2. Checks if the URL contains a Dutch-Belgian locale segment (`be-nl`, `nl-be`, `/nl/`)
+3. Constructs the French alternative URL
+4. Sends a HEAD request (falls back to GET) to verify the French URL exists — 5-second timeout
+5. Redirects only if the French page returns a successful response
 
 ## Testing
 
@@ -53,3 +66,7 @@ Navigate to `http://localhost:8080/be-nl/test` — it should redirect to `http:/
 ### Debugging
 
 Go to `edge://extensions/`, find BelFr, and click the **service worker** link to open DevTools for the background script.
+
+## Keywords
+
+Belgian websites, Dutch to French redirect, language switcher, be-nl to be-fr, nl-be to fr-be, Belgium locale, browser extension, Chrome extension, Edge extension, Chromium extension, automatic translation redirect, Belgian French, Wallonia, Flanders, multilingual Belgium
