@@ -1,4 +1,11 @@
 {
+  "name": "belfr-extension",
+  "version": "1.0.0",
+  "description": "Auto-switch Belgian websites from Dutch to French",
+  "scripts": {
+    "build": "powershell -Command \"Compress-Archive -Path manifest.json, background.js, popup.html, popup.js, icons -DestinationPath belfr-extension.zip -Force\"",
+    "build:bash": "zip -r belfr-extension.zip manifest.json background.js popup.html popup.js icons/"
+  },
   "dependencies": {
     "canvas": "^3.2.3"
   }
