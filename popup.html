@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      width: 280px;
+      padding: 12px;
+      font-family: Segoe UI, Arial, sans-serif;
+      font-size: 13px;
+      color: #222;
+    }
+    h2 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      color: #0055A4;
+    }
+    .status {
+      padding: 8px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    .match { background: #d4edda; color: #155724; }
+    .no-match { background: #f8f9fa; color: #6c757d; }
+    .info { font-size: 11px; color: #888; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h2>🇧🇪 BelFr</h2>
+  <div id="status" class="status no-match">Checking current page...</div>
+  <div class="info">Automatically switches be-nl / nl-be URLs to be-fr / fr-be when available.</div>
+  <script src="popup.js"></script>
+</body>
+</html>
