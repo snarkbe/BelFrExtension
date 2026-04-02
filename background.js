@@ -1,11 +1,28 @@
 // Mapping of Dutch-Belgian URL segments to French-Belgian equivalents
 const REPLACEMENTS = [
+  // Fused subdomain prefix (e.g. benl.ebay.be → befr.ebay.be)
+  { from: "benl.", to: "befr." },
+  { from: "BENL.", to: "BEFR." },
+  // Locale codes with hyphen (e.g. Accept-Language style)
   { from: "be-nl", to: "be-fr" },
   { from: "nl-be", to: "fr-be" },
-  { from: "/nl/", to: "/fr/" },
   { from: "BE-NL", to: "BE-FR" },
   { from: "NL-BE", to: "FR-BE" },
+  // Locale codes with underscore (e.g. Magento, Drupal, WooCommerce)
+  { from: "nl_BE", to: "fr_BE" },
+  { from: "nl_be", to: "fr_be" },
+  { from: "NL_BE", to: "FR_BE" },
+  // Path segments
+  { from: "/nl/", to: "/fr/" },
   { from: "/NL/", to: "/FR/" },
+  { from: "/ned/", to: "/fr/" },
+  { from: "/NED/", to: "/FR/" },
+  // Query parameters: ?lang=nl, ?language=nl, ?locale=nl, ?lng=nl, ?hl=nl
+  { from: "lang=nl", to: "lang=fr" },
+  { from: "language=nl", to: "language=fr" },
+  { from: "locale=nl", to: "locale=fr" },
+  { from: "lng=nl", to: "lng=fr" },
+  { from: "hl=nl", to: "hl=fr" },
 ];
 
 /**
@@ -19,16 +36,14 @@ function getFrenchUrl(url) {
       return url.replace(from, to);
     }
   }
-  // Also handle mixed case via case-insensitive check
-  const lowerUrl = url.toLowerCase();
-  if (lowerUrl.includes("be-nl")) {
-    return url.replace(/be-nl/gi, "be-fr");
-  }
-  if (lowerUrl.includes("nl-be")) {
-    return url.replace(/nl-be/gi, "fr-be");
-  }
-  if (lowerUrl.includes("/nl/")) {
-    return url.replace(/\/nl\//gi, "/fr/");
+  // Subdomain: nl.example.be → fr.example.be, benl.example.be → befr.example.be
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname.startsWith("nl.") && parsed.hostname.endsWith(".be")) {
+      return url.replace(parsed.hostname, parsed.hostname.replace(/^nl\./, "fr."));
+    }
+  } catch {
+    // not a valid URL, skip
   }
   return null;
 }

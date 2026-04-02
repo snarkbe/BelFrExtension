@@ -6,7 +6,7 @@
     "build": "powershell -Command \"Compress-Archive -Path manifest.json, background.js, popup.html, popup.js, icons -DestinationPath belfr-extension.zip -Force\"",
     "build:bash": "zip -r belfr-extension.zip manifest.json background.js popup.html popup.js icons/"
   },
-  "dependencies": {
+  "devDependencies": {
     "canvas": "^3.2.3"
   }
 }
