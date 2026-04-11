@@ -3,7 +3,7 @@
   "name": "BelFr",
   "version": "1.0.0",
   "description": "Automatically switches Belgian Dutch (be-nl/nl-be) URLs to Belgian French (be-fr/fr-be) when available.",
-  "permissions": ["activeTab"],
+  "permissions": ["activeTab", "webNavigation"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js"

@@ -36,9 +36,14 @@ function getFrenchUrl(url) {
       return url.replace(from, to);
     }
   }
-  // Subdomain: nl.example.be → fr.example.be, benl.example.be → befr.example.be
+  // Path ending with /nl or /NL (no trailing slash), e.g. coolblue.be/nl
   try {
     const parsed = new URL(url);
+    if (/\/nl$/i.test(parsed.pathname)) {
+      const newPath = parsed.pathname.replace(/\/nl$/i, "/fr");
+      return url.replace(parsed.pathname, newPath);
+    }
+    // Subdomain: nl.example.be → fr.example.be, benl.example.be → befr.example.be
     if (parsed.hostname.startsWith("nl.") && parsed.hostname.endsWith(".be")) {
       return url.replace(parsed.hostname, parsed.hostname.replace(/^nl\./, "fr."));
     }
@@ -48,47 +53,62 @@ function getFrenchUrl(url) {
   return null;
 }
 
+// Cache verification results to avoid repeated network checks.
+// Key: French URL, Value: { exists: boolean, timestamp: number }
+const verificationCache = new Map();
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
 /**
  * Check if a URL exists by making a HEAD request.
+ * Uses a cache to skip repeated checks for the same URL.
  * Returns true if the server responds with a success status (2xx or 3xx).
  */
 async function urlExists(url) {
+  const cached = verificationCache.get(url);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.exists;
+  }
+
+  let exists = false;
   try {
     const response = await fetch(url, {
       method: "HEAD",
       redirect: "follow",
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(3000),
     });
-    return response.ok;
+    exists = response.ok;
   } catch {
     // If HEAD fails (some servers block it), try GET
     try {
       const response = await fetch(url, {
         method: "GET",
         redirect: "follow",
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(3000),
       });
-      return response.ok;
+      exists = response.ok;
     } catch {
-      return false;
+      exists = false;
     }
   }
+
+  verificationCache.set(url, { exists, timestamp: Date.now() });
+  return exists;
 }
 
-// Listen for tab updates (page navigation)
-chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  // Only act when the page finishes loading
-  if (changeInfo.status !== "complete" || !tab.url) return;
+// Intercept navigation before the page starts loading
+chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
+  // Only handle top-level navigation (not iframes)
+  if (details.frameId !== 0) return;
 
-  const frenchUrl = getFrenchUrl(tab.url);
-  if (!frenchUrl || frenchUrl === tab.url) return;
+  const frenchUrl = getFrenchUrl(details.url);
+  if (!frenchUrl || frenchUrl === details.url) return;
 
   // Check if the French URL exists before redirecting
   const exists = await urlExists(frenchUrl);
   if (exists) {
-    chrome.tabs.update(tabId, { url: frenchUrl });
+    chrome.tabs.update(details.tabId, { url: frenchUrl });
     // Update badge to indicate a switch happened
-    chrome.action.setBadgeText({ text: "FR", tabId });
-    chrome.action.setBadgeBackgroundColor({ color: "#0055A4", tabId });
+    chrome.action.setBadgeText({ text: "FR", tabId: details.tabId });
+    chrome.action.setBadgeBackgroundColor({ color: "#0055A4", tabId: details.tabId });
   }
 });
