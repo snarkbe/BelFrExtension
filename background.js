@@ -53,62 +53,27 @@ function getFrenchUrl(url) {
   return null;
 }
 
-// Cache verification results to avoid repeated network checks.
-// Key: French URL, Value: { exists: boolean, timestamp: number }
-const verificationCache = new Map();
-const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
-
-/**
- * Check if a URL exists by making a HEAD request.
- * Uses a cache to skip repeated checks for the same URL.
- * Returns true if the server responds with a success status (2xx or 3xx).
- */
-async function urlExists(url) {
-  const cached = verificationCache.get(url);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    return cached.exists;
-  }
-
-  let exists = false;
-  try {
-    const response = await fetch(url, {
-      method: "HEAD",
-      redirect: "follow",
-      signal: AbortSignal.timeout(3000),
-    });
-    exists = response.ok;
-  } catch {
-    // If HEAD fails (some servers block it), try GET
-    try {
-      const response = await fetch(url, {
-        method: "GET",
-        redirect: "follow",
-        signal: AbortSignal.timeout(3000),
-      });
-      exists = response.ok;
-    } catch {
-      exists = false;
-    }
-  }
-
-  verificationCache.set(url, { exists, timestamp: Date.now() });
-  return exists;
-}
+// Track tabs we've already redirected to avoid infinite loops
+const redirectedTabs = new Set();
 
 // Intercept navigation before the page starts loading
-chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
+chrome.webNavigation.onBeforeNavigate.addListener((details) => {
   // Only handle top-level navigation (not iframes)
   if (details.frameId !== 0) return;
+
+  // Skip if we just redirected this tab (avoid redirect loop)
+  if (redirectedTabs.has(details.tabId)) {
+    redirectedTabs.delete(details.tabId);
+    return;
+  }
 
   const frenchUrl = getFrenchUrl(details.url);
   if (!frenchUrl || frenchUrl === details.url) return;
 
-  // Check if the French URL exists before redirecting
-  const exists = await urlExists(frenchUrl);
-  if (exists) {
-    chrome.tabs.update(details.tabId, { url: frenchUrl });
-    // Update badge to indicate a switch happened
-    chrome.action.setBadgeText({ text: "FR", tabId: details.tabId });
-    chrome.action.setBadgeBackgroundColor({ color: "#0055A4", tabId: details.tabId });
-  }
+  // Mark this tab as redirected, then switch to the French URL
+  redirectedTabs.add(details.tabId);
+  chrome.tabs.update(details.tabId, { url: frenchUrl });
+  // Update badge to indicate a switch happened
+  chrome.action.setBadgeText({ text: "FR", tabId: details.tabId });
+  chrome.action.setBadgeBackgroundColor({ color: "#0055A4", tabId: details.tabId });
 });
